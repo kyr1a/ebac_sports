@@ -1,42 +1,35 @@
-import { Produto as ProdutoType } from '../App'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { useGetProdutosQuery } from '../services/produtoApi'
+import { adicionar } from '../store/reducers/carrinho'
+import { toggleFavorito } from '../store/reducers/favoritos'
 import Produto from '../components/Produto'
-
 import * as S from './styles'
 
-type Props = {
-  produtos: ProdutoType[]
-  favoritos: ProdutoType[]
-  adicionarAoCarrinho: (produto: ProdutoType) => void
-  favoritar: (produto: ProdutoType) => void
-}
+const ProdutosComponent = () => {
+  const dispatch = useAppDispatch()
+  const favoritos = useAppSelector((state) => state.favoritos)
+  const { data: produtos = [], isLoading } = useGetProdutosQuery()
 
-const ProdutosComponent = ({
-  produtos,
-  favoritos,
-  adicionarAoCarrinho,
-  favoritar
-}: Props) => {
-  const produtoEstaNosFavoritos = (produto: ProdutoType) => {
-    const produtoId = produto.id
-    const IdsDosFavoritos = favoritos.map((f) => f.id)
+  const produtoEstaNosFavoritos = (produtoId: number) => {
+    return favoritos.some((p) => p.id === produtoId)
+  }
 
-    return IdsDosFavoritos.includes(produtoId)
+  if (isLoading) {
+    return <p>Carregando...</p>
   }
 
   return (
-    <>
-      <S.Produtos>
-        {produtos.map((produto) => (
-          <Produto
-            estaNosFavoritos={produtoEstaNosFavoritos(produto)}
-            key={produto.id}
-            produto={produto}
-            favoritar={favoritar}
-            aoComprar={adicionarAoCarrinho}
-          />
-        ))}
-      </S.Produtos>
-    </>
+    <S.Produtos>
+      {produtos.map((produto) => (
+        <Produto
+          key={produto.id}
+          produto={produto}
+          estaNosFavoritos={produtoEstaNosFavoritos(produto.id)}
+          favoritar={() => dispatch(toggleFavorito(produto))}
+          aoComprar={() => dispatch(adicionar(produto))}
+        />
+      ))}
+    </S.Produtos>
   )
 }
 

@@ -1,55 +1,30 @@
-import { useEffect, useState } from 'react'
+import { GlobalStyle } from './styles'
 import Header from './components/Header'
 import Produtos from './containers/Produtos'
 
-import { GlobalStyle } from './styles'
-
-export type Produto = {
-  id: number
-  nome: string
-  preco: number
-  imagem: string
-}
+import { useAppSelector } from './store/hooks'
+import { useGetProdutosQuery } from './services/produtoApi'
 
 function App() {
-  const [produtos, setProdutos] = useState<Produto[]>([])
-  const [carrinho, setCarrinho] = useState<Produto[]>([])
-  const [favoritos, setFavoritos] = useState<Produto[]>([])
+  const { data: produtos, isLoading, error } = useGetProdutosQuery()
 
-  useEffect(() => {
-    fetch('https://fake-api-tau.vercel.app/api/ebac_sports')
-      .then((res) => res.json())
-      .then((res) => setProdutos(res))
-  }, [])
+  const favoritos = useAppSelector((state) => state.favoritos)
+  const carrinho = useAppSelector((state) => state.carrinho)
 
-  function adicionarAoCarrinho(produto: Produto) {
-    if (carrinho.find((p) => p.id === produto.id)) {
-      alert('Item já adicionado')
-    } else {
-      setCarrinho([...carrinho, produto])
-    }
+  if (isLoading) {
+    return <p>Carregando produtos...</p>
   }
 
-  function favoritar(produto: Produto) {
-    if (favoritos.find((p) => p.id === produto.id)) {
-      const favoritosSemProduto = favoritos.filter((p) => p.id !== produto.id)
-      setFavoritos(favoritosSemProduto)
-    } else {
-      setFavoritos([...favoritos, produto])
-    }
+  if (error || !produtos) {
+    return <p>Erro ao carregar produtos.</p>
   }
 
   return (
     <>
       <GlobalStyle />
       <div className="container">
-        <Header favoritos={favoritos} itensNoCarrinho={carrinho} />
-        <Produtos
-          produtos={produtos}
-          favoritos={favoritos}
-          favoritar={favoritar}
-          adicionarAoCarrinho={adicionarAoCarrinho}
-        />
+        <Header favoritos={favoritos} itensNoCarrinho={carrinho.itens} />
+        <Produtos />
       </div>
     </>
   )
